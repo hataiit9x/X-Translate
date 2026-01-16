@@ -24,6 +24,10 @@ interface ChatCompletionResponse {
   }[];
 }
 
+const isTauri = () => {
+  return typeof window !== "undefined" && "__TAURI__" in window;
+};
+
 export class LLMService {
   private account: LLMAccount;
 
@@ -50,19 +54,33 @@ export class LLMService {
       frequency_penalty: 0,
     };
 
-    const baseUrl = this.account.baseUrl.replace(/\/$/, "");
-    const url = `${baseUrl}/chat/completions`;
-
     if (onProgress) onProgress(10);
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.account.apiKey}`,
-      },
-      body: JSON.stringify(request),
-    });
+    let response: Response;
+
+    if (isTauri()) {
+      const baseUrl = this.account.baseUrl.replace(/\/$/, "");
+      const url = `${baseUrl}/chat/completions`;
+
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.account.apiKey}`,
+        },
+        body: JSON.stringify(request),
+      });
+    } else {
+      response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Base-URL": this.account.baseUrl,
+          "X-API-Key": this.account.apiKey,
+        },
+        body: JSON.stringify(request),
+      });
+    }
 
     if (onProgress) onProgress(80);
 
