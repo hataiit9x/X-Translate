@@ -39,7 +39,7 @@ app.post("/api/translate", async (req, res) => {
 
 app.use(express.static(join(__dirname, "dist")));
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
